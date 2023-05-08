@@ -1,0 +1,15 @@
+variables:
+- name: DOTNET_CLI_TELEMETRY_OPTOUT
+  value: true
+- name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+  value: true
+- name: NUGET_XMLDOC_MODE
+  value: Skip
+- name: POWERSHELL_TELEMETRY_OPTOUT
+  value: true
+- name: customTag
+  value: '-$(Build.BuildID)'
+- name: buildPlatform
+  value: 'Any CPU'
+- name: buildConfiguration
+  value: 'Release'

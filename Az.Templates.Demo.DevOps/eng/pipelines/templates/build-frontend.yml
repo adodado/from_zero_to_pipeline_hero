@@ -1,0 +1,16 @@
+jobs:
+  - job: runBuild
+    displayName: Build frontend
+    steps:
+      - task: Npm@1
+        displayName: "Package install"
+        inputs:
+          command: 'install'
+          workingDir: $(System.DefaultWorkingDirectory)
+          verbose: true
+      - task: Npm@1
+        displayName: "Build"
+        inputs:
+            command: 'custom'
+            workingDir: $(System.DefaultWorkingDirectory)
+            customCommand: 'run build'

@@ -1,0 +1,55 @@
+parameters:
+  - name: buildConfiguration
+    type: string
+    default: 'Release'
+
+jobs:
+  - job: runBuild
+    displayName: Build & Publish
+    steps:
+      - task: UseDotNet@2
+        displayName: Use dotnet 6.x
+        continueOnError: false
+        inputs:
+          packageType: "sdk"
+          version: 6.x
+          installationPath: "$(Agent.ToolsDirectory)/dotnet"
+      - task: NuGetCommand@2
+        inputs:
+          command: 'restore'
+          restoreSolution: '**/*.sln'
+          feedsToUse: 'select'
+      - task: DotNetCoreCLI@2
+        displayName: Build step
+        inputs:
+          command: "build"
+          projects: "src/**/*.csproj"
+          arguments: "--configuration Release"
+      - task: DotNetCoreCLI@2
+        displayName: Publish build
+        inputs:
+          command: publish
+          arguments: "--configuration Release"
+          projects: "src/**/*.csproj"
+          publishWebProjects: false
+          modifyOutputPath: false
+          zipAfterPublish: true
+      - task: CopyFiles@2
+        displayName: Copy files
+        inputs:
+          sourceFolder: "$(Build.SourcesDirectory)/src"
+          contents: "/**/bin/${{parameters.buildConfiguration}}/**/*.zip"
+          targetFolder: "$(Build.ArtifactStagingDirectory)"
+          flattenFolders: true
+      - task: CmdLine@2
+        displayName: List files
+        inputs:
+          script: |
+              echo "Build.ArtifactStagingDirectory:" 
+              tree $(Build.ArtifactStagingDirectory)
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish artifact"
+        inputs:
+          targetPath: "$(Build.ArtifactStagingDirectory)"
+          artifact: "app"
+          publishLocation: "pipeline"

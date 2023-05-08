@@ -1,0 +1,47 @@
+trigger:
+  - main
+
+jobs:
+  - job: Build
+    displayName: "Build Backend"
+    steps:
+    - task: NuGetCommand@2
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'select'
+    - task: DotNetCoreCLI@2
+      displayName: "Run unit tests"
+      continueOnError: true
+      inputs:
+        command: "test"
+        projects: test/**/*.csproj
+        arguments: '--no-restore --logger "trx" --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura'
+        publishTestResults: true
+    - task: PublishCodeCoverageResults@1
+      displayName: "Publish Code Coverage summary"
+      continueOnError: true
+      inputs:
+        codeCoverageTool: "Cobertura"
+        summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
+        failIfCoverageEmpty: false
+    - task: CmdLine@2
+      inputs:
+        script: "dotnet tool install --global dotnet-reportgenerator-globaltool --version 4.5.8"
+      displayName: "Install ReportGenerator tool"
+      continueOnError: true
+    - script: 'reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Pipeline.Workspace)/CoverageResults -historydir:$(Build.ArtifactStagingDirectory)/test-result-history -reporttypes:"HtmlInline_AzurePipelines;Cobertura;HtmlSummary" -tag:$(Build.BuildNumber) -title:"Code coverage for $(Build.Repository.Name) on $(Build.SourceBranchName)" -verbosity:Verbose'
+      displayName: Create Code coverage report
+      continueOnError: true
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish reportgenerator artifact"
+      continueOnError: true
+      inputs:
+        PathtoPublish: "$(Pipeline.Workspace)/CoverageResults"
+        ArtifactName: coverageResults
+    - task: DotNetCoreCLI@2
+      displayName: Build step
+      inputs:
+        command: "build"
+        projects: "src/**/*.csproj"
+        arguments: "--configuration Release"

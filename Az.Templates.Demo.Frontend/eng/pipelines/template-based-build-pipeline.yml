@@ -1,0 +1,23 @@
+name: '$(date:yyyy).$(date:MM).$(date:dd)$(Rev:.rr)'
+
+trigger:
+  tags:
+    include:
+      - '*'
+  branches:
+    include:
+      - '*'
+
+resources:
+  repositories:
+    - repository: utilities
+      type: git
+      name: Az.Templates.Demo.DevOps
+      ref: refs/heads/master
+
+extends:
+  template: eng/pipelines/templates/basic-build-template.yml@utilities
+  parameters:
+    executePreRunWaitJob: false
+    projectType: frontend
+    continueOnError: true

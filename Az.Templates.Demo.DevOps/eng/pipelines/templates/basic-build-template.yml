@@ -1,0 +1,49 @@
+parameters:
+  - name: executePreRunWaitJob
+    type: boolean
+    default: true
+
+  - name: projectType
+    type: string
+    default: backend
+
+  - name: publishCodeCoverage
+    type: string
+    default: true
+
+  - name: continueOnError
+    type: boolean
+    default: false
+
+variables:
+  - template: ../libs/pipeline-variables.yml
+
+stages:
+  - ${{ if eq(parameters.executePreRunWaitJob,'True') }}:
+    - stage: preRun
+      displayName: Warmup
+      jobs:
+            - job: preRunWaitJob
+              displayName: Wait for possible skip
+              steps:
+                - checkout: none
+                - bash: sleep 30s
+                  displayName: "Wait 30sec"
+  - stage: runTests
+    displayName: Test
+    jobs:
+      - template: run-test-job-template.yml
+        parameters:
+          projectType: ${{parameters.projectType}}
+          publishCodeCoverage: ${{parameters.publishCodeCoverage}}
+          continueOnError: ${{parameters.continueOnError}}
+  - stage: buildApp
+    displayName: Build
+    jobs:
+      - ${{if eq(parameters.projectType,'backend')}}:
+        - template: build-backend.yml
+          parameters:
+            buildConfiguration: ${{ variables['buildConfiguration']}}'
+      - ${{else}}:  
+        - template: build-frontend.yml
+

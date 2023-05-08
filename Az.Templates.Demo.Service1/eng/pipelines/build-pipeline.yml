@@ -1,0 +1,13 @@
+trigger:
+  - main
+
+jobs:
+  - job: Build
+    displayName: "Build Backend"
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: Build step
+      inputs:
+        command: "build"
+        projects: "**/*.csproj"
+        arguments: "--configuration Release"
